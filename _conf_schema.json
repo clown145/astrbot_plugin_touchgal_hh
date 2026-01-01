@@ -5,6 +5,18 @@
         "hint": "TouchGal 网站的主域名（不含 https:// 前缀）。当网站更换域名时可在此修改。",
         "default": "www.touchgal.top"
     },
+    "shionlib_domain": {
+        "description": "书音的图书馆 (Shionlib) 网站域名",
+        "type": "string",
+        "hint": "Shionlib 网站的主域名（不含 https:// 前缀）。当网站更换域名时可在此修改。",
+        "default": "shionlib.com"
+    },
+    "shionlib_enabled": {
+        "description": "启用 Shionlib 推荐",
+        "type": "bool",
+        "hint": "开启后，搜索结果会在合并消息开头显示 Shionlib 上的相关游戏链接（前5个）。",
+        "default": true
+    },
     "show_nsfw": {
         "description": "显示 NSFW 内容",
         "type": "bool",

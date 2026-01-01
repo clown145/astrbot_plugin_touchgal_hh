@@ -1,8 +1,8 @@
 import json
 import asyncio
 import re
-import requests
-from typing import List, Dict
+import aiohttp
+from typing import List, Dict, Optional
 
 # AstrBot 核心 API 导入
 from astrbot.api import logger, AstrBotConfig
@@ -17,16 +17,19 @@ class TouchGalPlugin(Star):
         self.config = config
         self.session_timeout = self.config.get("session_timeout", 60)
         self.domain = self.config.get("touchgal_domain", "www.touchgal.top")
+        self.shionlib_domain = self.config.get("shionlib_domain", "shionlib.com")
+        self.shionlib_enabled = self.config.get("shionlib_enabled", True)
         self.active_sessions: Dict[str, SessionController] = {}
-        self.api_session = self.create_session()
+        
+        # 初始化通用请求头
+        self.headers = self._create_headers()
         
         # 初始化日志
         auto_search = self.config.get("auto_search_enabled", False)
-        logger.info(f"TouchGal 插件已加载 | 自动搜索: {'已启用' if auto_search else '未启用'} | 域名: {self.domain}")
+        logger.info(f"TouchGal 插件已加载 | 自动搜索: {'已启用' if auto_search else '未启用'} | TouchGal: {self.domain} | Shionlib: {self.shionlib_domain}")
 
-    def create_session(self) -> requests.Session:
-        """创建一个包含通用请求头和自定义Cookie的 requests.Session 对象"""
-        session = requests.Session()
+    def _create_headers(self) -> dict:
+        """创建通用请求头"""
         headers = {
             'accept': '*/*', 'accept-language': 'zh-CN,zh;q=0.9',
             'content-type': 'text/plain;charset=UTF-8', 'origin': f'https://{self.domain}',
@@ -42,53 +45,141 @@ class TouchGalPlugin(Star):
             headers['cookie'] = 'kun-patch-setting-store|state|data|kunNsfwEnable=all'
             logger.info("TouchGal 插件已开启 NSFW 内容显示。")
             
-        session.headers.update(headers)
-        return session
+        return headers
 
     async def search_games_async(self, keyword: str, page: int = 1, limit: int = 10) -> List[dict]:
-        """异步执行搜索游戏的网络请求"""
-        def blocking_search():
-            search_url = f'https://{self.domain}/api/search'
-            query_list = [{"type": "keyword", "name": keyword}]
-            query_string = json.dumps(query_list)
-            payload = {
-                "queryString": query_string, "limit": limit, "page": page,
-                "searchOption": {"searchInIntroduction": False, "searchInAlias": True, "searchInTag": False},
-                "selectedType": "all", "selectedLanguage": "all", "selectedPlatform": "all",
-                "sortField": "resource_update_time", "sortOrder": "desc",
-                "selectedYears": ["all"], "selectedMonths": ["all"]
-            }
-            try:
-                response = self.api_session.post(search_url, data=json.dumps(payload), timeout=10)
-                response.raise_for_status()
-                search_results = response.json()
-                return search_results.get('galgames', []) if isinstance(search_results, dict) else []
-            except requests.RequestException as e:
-                logger.error(f"TouchGal search failed: {e}")
-                return []
+        """异步执行搜索游戏的网络请求（使用 aiohttp）"""
+        search_url = f'https://{self.domain}/api/search'
+        query_list = [{"type": "keyword", "name": keyword}]
+        query_string = json.dumps(query_list)
+        payload = {
+            "queryString": query_string, "limit": limit, "page": page,
+            "searchOption": {"searchInIntroduction": False, "searchInAlias": True, "searchInTag": False},
+            "selectedType": "all", "selectedLanguage": "all", "selectedPlatform": "all",
+            "sortField": "resource_update_time", "sortOrder": "desc",
+            "selectedYears": ["all"], "selectedMonths": ["all"]
+        }
         
-        return await asyncio.to_thread(blocking_search)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    search_url,
+                    data=json.dumps(payload),
+                    headers=self.headers,
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status != 200:
+                        logger.warning(f"TouchGal search failed with status: {response.status}")
+                        return []
+                    search_results = await response.json()
+                    return search_results.get('galgames', []) if isinstance(search_results, dict) else []
+        except asyncio.TimeoutError:
+            logger.error("TouchGal search timeout")
+            return []
+        except Exception as e:
+            logger.error(f"TouchGal search failed: {e}")
+            return []
 
     async def get_links_async(self, game_info: dict) -> List[dict]:
-        """异步获取下载链接"""
-        def blocking_get_links():
-            patch_id = game_info.get('id')
-            unique_id = game_info.get('uniqueId')
-            if not patch_id or not unique_id:
-                return []
-            
-            resource_url = f'https://{self.domain}/api/patch/resource?patchId={patch_id}'
-            headers = self.api_session.headers.copy()
-            headers.update({'referer': f'https://{self.domain}/{unique_id}'})
-            try:
-                response = self.api_session.get(resource_url, headers=headers, timeout=10)
-                response.raise_for_status()
-                return response.json()
-            except (requests.RequestException, json.JSONDecodeError) as e:
-                logger.error(f"TouchGal get links failed: {e}")
-                return []
-                
-        return await asyncio.to_thread(blocking_get_links)
+        """异步获取下载链接（使用 aiohttp）"""
+        patch_id = game_info.get('id')
+        unique_id = game_info.get('uniqueId')
+        if not patch_id or not unique_id:
+            return []
+        
+        resource_url = f'https://{self.domain}/api/patch/resource?patchId={patch_id}'
+        headers = self.headers.copy()
+        headers['referer'] = f'https://{self.domain}/{unique_id}'
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    resource_url,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status != 200:
+                        logger.warning(f"TouchGal get links failed with status: {response.status}")
+                        return []
+                    return await response.json()
+        except asyncio.TimeoutError:
+            logger.error("TouchGal get links timeout")
+            return []
+        except Exception as e:
+            logger.error(f"TouchGal get links failed: {e}")
+            return []
+
+    async def search_shionlib_async(self, keyword: str, limit: int = 5) -> List[dict]:
+        """
+        异步搜索 Shionlib 资源站，返回游戏列表（仅包含名称和链接）
+        
+        Args:
+            keyword: 搜索关键词
+            limit: 返回结果数量限制
+        
+        Returns:
+            游戏列表 [{'id': '708', 'name': '千恋万花', 'url': 'https://shionlib.com/zh/game/708'}, ...]
+        """
+        search_url = f"https://{self.shionlib_domain}/zh/search/game"
+        params = {"q": keyword}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9'
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(search_url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status != 200:
+                        logger.warning(f"Shionlib 搜索请求失败，状态码: {response.status}")
+                        return []
+                    
+                    html = await response.text()
+                    
+                    # 解析 HTML 提取游戏列表
+                    # 匹配格式: <a href="/zh/game/708">...游戏名...</a>
+                    game_pattern = r'<a[^>]*href="(/zh/game/(\d+))"[^>]*>'
+                    matches = re.findall(game_pattern, html)
+                    
+                    if not matches:
+                        logger.debug(f"Shionlib 未找到游戏结果: {keyword}")
+                        return []
+                    
+                    # 提取游戏名称（查找游戏卡片中的标题）
+                    # 更精确的匹配：查找包含游戏ID链接附近的标题
+                    games = []
+                    seen_ids = set()
+                    
+                    for href, game_id in matches:
+                        if game_id in seen_ids:
+                            continue
+                        seen_ids.add(game_id)
+                        
+                        # 尝试提取游戏名称（查找链接后的文本或附近的 h3/p 标签）
+                        # 简化方案：从 HTML 中匹配游戏名称
+                        name_pattern = rf'href="{re.escape(href)}"[^>]*>\s*(?:<[^>]*>)*\s*([^<]+)'
+                        name_match = re.search(name_pattern, html)
+                        game_name = name_match.group(1).strip() if name_match else f"游戏 #{game_id}"
+                        
+                        games.append({
+                            'id': game_id,
+                            'name': game_name,
+                            'url': f"https://{self.shionlib_domain}{href}"
+                        })
+                        
+                        if len(games) >= limit:
+                            break
+                    
+                    logger.debug(f"Shionlib 搜索到 {len(games)} 个结果: {keyword}")
+                    return games
+                    
+        except asyncio.TimeoutError:
+            logger.warning(f"Shionlib 搜索超时: {keyword}")
+            return []
+        except Exception as e:
+            logger.error(f"Shionlib 搜索异常: {e}")
+            return []
 
     @filter.command("搜索")
     async def search_command(self, event: AstrMessageEvent, keyword: str):
@@ -183,9 +274,14 @@ class TouchGalPlugin(Star):
                         if not resources:
                             await event.send(event.plain_result("未能获取到该游戏的资源链接。"))
                         else:
+                            # 并行搜索 Shionlib
+                            shionlib_games = []
+                            if self.shionlib_enabled:
+                                shionlib_games = await self.search_shionlib_async(selected_game.get('name', ''))
+                            
                             # 使用合并转发消息发送资源
                             bot_uin = event.get_self_id()  # 使用机器人自己的头像
-                            nodes = self._build_forward_nodes(selected_game.get('name', '未知游戏'), resources, bot_uin)
+                            nodes = self._build_forward_nodes(selected_game.get('name', '未知游戏'), resources, bot_uin, shionlib_games)
                             await event.send(event.chain_result(nodes))
                         
                         controller.stop()
@@ -224,7 +320,13 @@ class TouchGalPlugin(Star):
                 del self.active_sessions[session_id]
             event.stop_event()
 
-    def _build_forward_nodes(self, game_name: str, resources: List[dict], bot_uin: str = "10000"):
+    def _build_forward_nodes(
+        self, 
+        game_name: str, 
+        resources: List[dict], 
+        bot_uin: str = "10000",
+        shionlib_games: Optional[List[dict]] = None
+    ):
         """
         将资源列表构建成一个合并转发消息。
         使用 Nodes 组件包装多个 Node，确保作为一条合并转发消息发送。
@@ -233,13 +335,31 @@ class TouchGalPlugin(Star):
             game_name: 游戏名称
             resources: 资源列表
             bot_uin: 机器人的 QQ 号，用于显示头像
+            shionlib_games: Shionlib 搜索结果列表（可选）
         """
         from astrbot.api.message_components import Node, Nodes, Plain
         
         node_list = []
         
-        # 第一个节点：标题信息
+        # 第一个节点：Shionlib 资源推荐（如果有）
+        if shionlib_games:
+            shionlib_content = [
+                Plain(f"📚 【书音的图书馆】相关推荐\n"),
+                Plain(f"━" * 10 + "\n\n")
+            ]
+            for game in shionlib_games:
+                shionlib_content.append(Plain(f"🎮 {game['name']}\n"))
+                shionlib_content.append(Plain(f"🔗 {game['url']}\n\n"))
+            
+            node_list.append(Node(
+                uin=bot_uin,
+                content=shionlib_content
+            ))
+        
+        # 第二个节点：TouchGal 标题信息
         title_content = [
+            Plain(f"📦 【TouchGal 资源站】\n"),
+            Plain(f"━" * 10 + "\n\n"),
             Plain(f"🎮 游戏名称: {game_name}\n"),
             Plain(f"📦 共找到 {len(resources)} 个资源\n"),
             Plain("━" * 10)
@@ -372,9 +492,14 @@ class TouchGalPlugin(Star):
                 event.stop_event()
             return
         
+        # 并行搜索 Shionlib
+        shionlib_games = []
+        if self.shionlib_enabled:
+            shionlib_games = await self.search_shionlib_async(game_name)
+        
         # 构建并发送合并转发消息
         bot_uin = event.get_self_id()  # 使用机器人自己的头像
-        nodes = self._build_forward_nodes(game_name, resources, bot_uin)
+        nodes = self._build_forward_nodes(game_name, resources, bot_uin, shionlib_games)
         
         yield event.chain_result(nodes)
         event.stop_event()
