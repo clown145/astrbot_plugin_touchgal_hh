@@ -357,7 +357,7 @@ class TouchGalPlugin(Star):
                 game_content = [
                     Plain(f"━━ 推荐 {idx} ━━\n\n"),
                     Plain(f"🎮 {game['name']}\n\n"),
-                    Plain("� 点击访问 ↓\n"),
+                    Plain("▶ 点击访问\n"),
                     Plain(f"{game['url']}")
                 ]
                 node_list.append(Node(uin=bot_uin, content=game_content))
@@ -369,7 +369,7 @@ class TouchGalPlugin(Star):
             Plain("━━━━━━━━━━\n\n"),
             Plain(f"📍 {self.domain}\n"),
             Plain(f"🎮 {game_name}\n"),
-            Plain(f"� 找到 {len(resources)} 个资源")
+            Plain(f"📦 共 {len(resources)} 个资源")
         ]
         node_list.append(Node(uin=bot_uin, content=touchgal_header))
         
@@ -378,7 +378,7 @@ class TouchGalPlugin(Star):
             content_parts = [
                 Plain(f"━━ 资源 {idx} ━━\n\n"),
                 Plain(f"📦 {res.get('name', '未知')}\n\n"),
-                Plain("🔗 下载链接 ↓\n"),
+                Plain("▶ 下载链接\n"),
                 Plain(f"{res.get('content', '无')}")
             ]
             

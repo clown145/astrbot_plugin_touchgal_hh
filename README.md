@@ -1,12 +1,13 @@
 # TouchGal 游戏搜索插件
 
-一个 AstrBot 插件，用于从 [TouchGal](https://www.touchgal.top) 网站搜索游戏资源链接。
+一个 AstrBot 插件，用于从 [TouchGal](https://www.touchgal.top) 和 [书音的图书馆](https://shionlib.com) 搜索游戏资源链接。
 
 ## ✨ 功能特性
 
 - 🔍 **指令搜索**：通过 `/搜索 <游戏名>` 命令搜索资源
 - 🤖 **自动搜索**：检测群聊中的资源请求，自动搜索并返回结果
 - 📦 **合并转发**：资源以合并转发消息形式发送，每个资源独立展示
+- 📚 **多站点支持**：同时显示 TouchGal 和书音的图书馆的搜索结果
 - 🔐 **NSFW 支持**：一键开关即可搜索 NSFW 内容
 
 ## 📦 安装
@@ -20,7 +21,10 @@ git clone https://github.com/clown145/astrbot_plugin_touchgal
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `touchgal_domain` | string | `www.touchgal.top` | TouchGal 网站域名（域名变更时修改） |
+| `touchgal_domain` | string | `www.touchgal.top` | TouchGal 网站域名 |
+| `shionlib_domain` | string | `shionlib.com` | 书音的图书馆网站域名 |
+| `shionlib_enabled` | bool | true | 启用书音的图书馆推荐 |
+| `shionlib_limit` | int | 1 | 返回的书音推荐数量 |
 | `show_nsfw` | bool | false | 开启后可搜索 NSFW 内容 |
 | `session_timeout` | int | 60 | 搜索会话超时时间（秒） |
 | `auto_search_enabled` | bool | false | 启用自动搜索功能 |
@@ -52,6 +56,30 @@ git clone https://github.com/clown145/astrbot_plugin_touchgal
 - ...
 
 静默模式下只有搜到资源才会回复。
+
+## 📱 消息格式预览
+
+```
+📚 书音的图书馆
+━━━━━━━━━━
+📍 shionlib.com
+
+━━ 推荐 1 ━━
+🎮 千恋＊万花
+▶ 点击访问
+https://shionlib.com/zh/game/708
+
+📦 TouchGal 资源站
+━━━━━━━━━━
+📍 www.touchgal.top
+🎮 千恋万花
+📦 共 2 个资源
+
+━━ 资源 1 ━━
+📦 汉化组版本
+▶ 下载链接
+https://pan.baidu.com/xxx
+```
 
 ## 📋 平台支持
 
