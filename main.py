@@ -324,10 +324,16 @@ class TouchGalPlugin(Star):
             r'^(?:一个|一下|一份)\s*',  # 开头的量词
             r'^(?:那个|这个|个)\s*',  # 开头的指示词
             r'\s*(?:的资源|的游戏|资源|游戏|下载|链接|安装包|安卓|手机|手机端)$',  # 结尾的"资源"、"游戏"等
+            r'\s*(?:谢谢|感谢|蟹蟹|thx|thanks|thank you).*$',  # 结尾的感谢词
+            r'[！!？?，,。.~～、]+$',  # 结尾的标点符号
             r'的$',  # 结尾的"的"
         ]
         for cleanup in cleanup_patterns:
-            keyword = re.sub(cleanup, '', keyword).strip()
+            keyword = re.sub(cleanup, '', keyword, flags=re.IGNORECASE).strip()
+        
+        # 移除所有非有效字符（只保留中英文、数字、常见符号）
+        # 这会自动过滤掉所有emoji和特殊符号
+        keyword = re.sub(r'[^\u4e00-\u9fff\u3040-\u30ff\w\s\-_./:;!?&+\'\"()（）【】《》]', '', keyword).strip()
         
         if not keyword or len(keyword) < 2:
             return  # 关键词太短，忽略
