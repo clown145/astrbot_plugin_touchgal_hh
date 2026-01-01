@@ -128,7 +128,6 @@ class TouchGalPlugin(Star):
                         response_text = "--- 请选择 ---\n"
                         for idx, game in enumerate(new_games):
                             response_text += f"  {idx + 1}. {game.get('name')}\n"
-                        # ======================= [修改] 更新提示文本 =======================
                         response_text += "-------\n请输入序号选择，'p' 下一页，'q' 上一页，'e' 退出搜索。\n提示：在退出前，您无法与机器人进行普通对话。"
                         await event.send(event.plain_result(response_text))
                     
@@ -239,7 +238,7 @@ class TouchGalPlugin(Star):
         title_content = [
             Plain(f"🎮 游戏名称: {game_name}\n"),
             Plain(f"📦 共找到 {len(resources)} 个资源\n"),
-            Plain("━" * 20)
+            Plain("━" * 10)
         ]
         node_list.append(Node(
             uin=bot_uin,  # 使用机器人的头像
