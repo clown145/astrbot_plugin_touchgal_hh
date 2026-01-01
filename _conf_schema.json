@@ -1,0 +1,46 @@
+{
+    "touchgal_domain": {
+        "description": "TouchGal 网站域名",
+        "type": "string",
+        "hint": "TouchGal 网站的主域名（不含 https:// 前缀）。当网站更换域名时可在此修改。",
+        "default": "www.touchgal.top"
+    },
+    "touchgal_cookie": {
+        "description": "TouchGal 网站的 Cookie",
+        "type": "string",
+        "hint": "请在此处粘贴您在 touchgal.us 网站登录后的完整 Cookie 字符串。正确配置后，插件将可以搜索 NSFW 内容。请确保您的Cookie中包含 'kun-patch-setting-store|state|data|kunNsfwEnable=all'。",
+        "obvious_hint": true,
+        "default": ""
+    },
+    "session_timeout": {
+        "description": "搜索会话的超时时间（秒）",
+        "type": "int",
+        "hint": "用户发起搜索后，若在此时间内无后续操作（如翻页、选择），会话将自动结束。",
+        "default": 60
+    },
+    "auto_search_enabled": {
+        "description": "启用自动搜索功能",
+        "type": "bool",
+        "hint": "开启后，当群聊中检测到类似「有没有XXX资源」的消息时，将自动进行搜索并返回第一个结果的资源链接（以合并转发消息形式发送）。",
+        "obvious_hint": true,
+        "default": false
+    },
+    "auto_search_silent": {
+        "description": "静默模式",
+        "type": "bool",
+        "hint": "开启后，自动搜索时不会发送「正在搜索」等提示词，搜不到也不会回复，只有找到资源时才会发送合并转发消息。",
+        "default": true
+    },
+    "auto_search_pattern": {
+        "description": "自动搜索的正则匹配模式",
+        "type": "string",
+        "hint": "用于匹配群聊消息并提取搜索关键词的正则表达式。第一个捕获组将作为搜索关键词。",
+        "default": "(?:大佬|老哥|老师|朋友)?\\s*(?:请问|问一下)?\\s*(?:有没有|求(?:一个|一下|一份|个)?|谁有|哪里有|有人有)\\s*[《【\\\"']?([^的》】\\\"']+?)[》】\\\"']?(?:的)?(?:资源|游戏|下载|链接)?(?:吗|呀|啊|呢|么|？|\\?|$)"
+    },
+    "forward_message_sender_name": {
+        "description": "合并转发消息的发送者名称",
+        "type": "string",
+        "hint": "在合并转发消息中显示的发送者昵称。",
+        "default": "TouchGal 资源助手"
+    }
+}

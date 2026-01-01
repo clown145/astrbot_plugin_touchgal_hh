@@ -1,0 +1,66 @@
+# TouchGal 游戏搜索插件
+
+一个 AstrBot 插件，用于从 [TouchGal](https://www.touchgal.top) 网站搜索游戏资源链接。
+
+## ✨ 功能特性
+
+- 🔍 **指令搜索**：通过 `/搜索 <游戏名>` 命令搜索资源
+- 🤖 **自动搜索**：检测群聊中的资源请求，自动搜索并返回结果
+- 📦 **合并转发**：资源以合并转发消息形式发送，每个资源独立展示
+- 🔐 **NSFW 支持**：配置 Cookie 后可搜索 NSFW 内容
+
+## 📦 安装
+
+在 AstrBot 插件市场搜索安装，或手动克隆到 `data/plugins/` 目录：
+
+```bash
+cd AstrBot/data/plugins
+git clone https://github.com/your-repo/astrbot_plugin_touchgal
+```
+
+## ⚙️ 配置说明
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `touchgal_domain` | string | `www.touchgal.top` | TouchGal 网站域名（域名变更时修改） |
+| `touchgal_cookie` | string | 空 | 登录后的 Cookie，配置后可搜索 NSFW |
+| `session_timeout` | int | 60 | 搜索会话超时时间（秒） |
+| `auto_search_enabled` | bool | false | 启用自动搜索功能 |
+| `auto_search_silent` | bool | true | 静默模式（搜不到不回复） |
+| `auto_search_pattern` | string | 正则表达式 | 自动搜索的匹配模式 |
+| `forward_message_sender_name` | string | `TouchGal 资源助手` | 转发消息的发送者名称 |
+
+## 🎮 使用方法
+
+### 指令搜索
+
+```
+/搜索 <游戏名称>
+```
+
+返回搜索结果列表后：
+- 输入数字选择游戏
+- 输入 `p` 下一页
+- 输入 `q` 上一页
+- 输入 `e` 退出搜索
+
+### 自动搜索
+
+启用 `auto_search_enabled` 后，群聊中发送以下句式会自动触发搜索：
+
+- "有没有xxx资源"
+- "求xxx"
+- "谁有xxx"
+- "大佬有没有xxx"
+- ...
+
+静默模式下只有搜到资源才会回复。
+
+## 📋 平台支持
+
+- ✅ aiocqhttp（QQ 个人号）- 完整支持，包括合并转发消息
+- ⚠️ 其他平台 - 基础功能可用，合并转发可能不支持
+
+## 📄 许可
+
+MIT License
