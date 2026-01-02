@@ -322,6 +322,8 @@ class TouchGalPlugin(Star):
         """
         if not url:
             return None
+        
+        logger.info(f"开始下载图片: {url[:100]}...")
             
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -331,9 +333,11 @@ class TouchGalPlugin(Star):
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    logger.info(f"图片请求响应: {response.status}")
                     if response.status == 200:
                         image_data = await response.read()
+                        logger.info(f"图片数据大小: {len(image_data)} bytes")
                         # 保存到临时文件
                         suffix = '.webp' if 'webp' in url else '.jpg'
                         fd, temp_path = tempfile.mkstemp(suffix=suffix)
@@ -341,13 +345,16 @@ class TouchGalPlugin(Star):
                             os.write(fd, image_data)
                         finally:
                             os.close(fd)
-                        logger.debug(f"图片下载成功: {temp_path}")
+                        logger.info(f"图片下载成功: {temp_path}")
                         return temp_path
                     else:
-                        logger.debug(f"图片下载失败: {response.status}")
+                        logger.warning(f"图片下载失败，状态码: {response.status}")
                         return None
+        except asyncio.TimeoutError:
+            logger.warning(f"图片下载超时: {url[:50]}...")
+            return None
         except Exception as e:
-            logger.debug(f"图片下载异常: {e}")
+            logger.warning(f"图片下载异常: {e}")
             return None
 
     async def _build_shionlib_showcase_nodes_async(
