@@ -49,6 +49,12 @@
         "hint": "自动搜索时，在资源链接前显示的 TouchGal 相关游戏页面链接数量。",
         "default": 5
     },
+    "auto_search_shionlib": {
+        "description": "自动搜索时同时搜索书音",
+        "type": "bool",
+        "hint": "开启后，自动搜索时会同时搜索书音的图书馆，利用其模糊搜索能力。",
+        "default": true
+    },
     "auto_search_silent": {
         "description": "静默模式",
         "type": "bool",

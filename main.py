@@ -596,15 +596,14 @@ class TouchGalPlugin(Star):
         # 同时搜索 TouchGal 和 Shionlib（利用书音的模糊搜索）
         games = await self.search_games_async(keyword, page=1, limit=suggest_limit)
         
+        # 检查自动搜索时是否开启书音搜索
+        auto_search_shionlib = self.config.get("auto_search_shionlib", True)
         shionlib_games = []
-        if self.shionlib_enabled:
+        if self.shionlib_enabled and auto_search_shionlib:
             shionlib_games = await self.search_shionlib_async(keyword, limit=self.shionlib_limit)
         
-        # 如果两边都没搜到，才返回
+        # 如果两边都没搜到，静默返回
         if not games and not shionlib_games:
-            if not silent_mode:
-                yield event.plain_result(f"😔 没有找到与「{keyword}」相关的游戏资源。")
-                event.stop_event()
             return
         
         # 准备数据
