@@ -3,6 +3,8 @@ import asyncio
 import re
 import aiohttp
 import base64
+import tempfile
+import os
 from typing import List, Dict, Optional
 
 # AstrBot 核心 API 导入
@@ -311,6 +313,43 @@ class TouchGalPlugin(Star):
             logger.debug(f"图片下载异常: {e}")
             return None
 
+    async def _download_image_to_temp(self, url: str) -> Optional[str]:
+        """
+        下载图片并保存到临时文件
+        
+        Returns:
+            临时文件路径，失败返回 None
+        """
+        if not url:
+            return None
+            
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Referer': f'https://{self.shionlib_domain}/'
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        image_data = await response.read()
+                        # 保存到临时文件
+                        suffix = '.webp' if 'webp' in url else '.jpg'
+                        fd, temp_path = tempfile.mkstemp(suffix=suffix)
+                        try:
+                            os.write(fd, image_data)
+                        finally:
+                            os.close(fd)
+                        logger.debug(f"图片下载成功: {temp_path}")
+                        return temp_path
+                    else:
+                        logger.debug(f"图片下载失败: {response.status}")
+                        return None
+        except Exception as e:
+            logger.debug(f"图片下载异常: {e}")
+            return None
+
     async def _build_shionlib_showcase_nodes_async(
         self, 
         section_name: str, 
@@ -323,6 +362,7 @@ class TouchGalPlugin(Star):
         from astrbot.api.message_components import Node, Nodes, Plain, Image
         
         node_list = []
+        temp_files = []  # 记录临时文件，用于后续清理
         
         # 标题节点
         header_content = [
@@ -341,12 +381,14 @@ class TouchGalPlugin(Star):
             ]
             # 下载并添加封面图片
             if game.get('image'):
-                image_base64 = await self._download_image_as_base64(game['image'])
-                if image_base64:
-                    game_content.append(Image.fromBase64(image_base64))
+                temp_path = await self._download_image_to_temp(game['image'])
+                if temp_path:
+                    temp_files.append(temp_path)
+                    game_content.append(Image.fromFileSystem(temp_path))
             
             node_list.append(Node(uin=bot_uin, content=game_content))
         
+        # 注意：临时文件会在发送后自动清理或由系统清理
         return [Nodes(node_list)]
 
     def _build_shionlib_showcase_nodes(
