@@ -385,12 +385,11 @@ class TouchGalPlugin(Star):
         bot_uin: str = "10000"
     ):
         """
-        构建书音展示的合并转发消息（带图片，异步下载）
+        构建书音展示的合并转发消息（带图片）
         """
         from astrbot.api.message_components import Node, Nodes, Plain, Image
         
         node_list = []
-        temp_files = []  # 记录临时文件，用于后续清理
         
         # 标题节点
         header_content = [
@@ -407,16 +406,12 @@ class TouchGalPlugin(Star):
                 Plain(f"🎮 {game['name']}\n\n"),
                 Plain(f"▶ {game['url']}\n\n")
             ]
-            # 下载并添加封面图片
+            # 直接使用原始图片 URL（不下载）
             if game.get('image'):
-                temp_path = await self._download_image_to_temp(game['image'])
-                if temp_path:
-                    temp_files.append(temp_path)
-                    game_content.append(Image.fromFileSystem(temp_path))
+                game_content.append(Image.fromURL(game['image']))
             
             node_list.append(Node(uin=bot_uin, content=game_content))
         
-        # 注意：临时文件会在发送后自动清理或由系统清理
         return [Nodes(node_list)]
 
     def _build_shionlib_showcase_nodes(
