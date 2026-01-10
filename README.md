@@ -9,6 +9,7 @@
 - 📦 **合并转发**：资源以合并转发消息形式发送，每个资源独立展示
 - 📚 **多站点支持**：同时显示 TouchGal 和书音的图书馆的搜索结果
 - 🔐 **NSFW 支持**：一键开关即可搜索 NSFW 内容
+- 🎯 **群聊过滤**：支持白名单/黑名单模式，控制自动搜索生效范围
 
 ## 📦 安装
 
@@ -32,6 +33,8 @@ git clone https://github.com/clown145/astrbot_plugin_touchgal
 | `auto_search_shionlib` | bool | true | 自动搜索时同时搜索书音 |
 | `auto_search_silent` | bool | true | 静默模式（搜不到不回复） |
 | `auto_search_pattern` | string | 正则表达式 | 自动搜索的匹配模式 |
+| `auto_search_group_mode` | string | `blacklist` | 群聊过滤模式（whitelist/blacklist） |
+| `auto_search_group_list` | list | `[]` | 群号列表，配合过滤模式使用 |
 
 ## 🎮 使用方法
 
@@ -58,6 +61,14 @@ git clone https://github.com/clown145/astrbot_plugin_touchgal
 - ...
 
 静默模式下只有搜到资源才会回复。
+
+### 群聊过滤
+
+通过 `auto_search_group_mode` 和 `auto_search_group_list` 配置可控制自动搜索的生效范围：
+
+- **白名单模式**（`whitelist`）：只有列表中的群聊会触发自动搜索
+- **黑名单模式**（`blacklist`）：列表中的群聊被屏蔽，其他群聊正常触发
+- 列表为空时不启用任何过滤
 
 ## 📱 消息格式预览
 
@@ -91,6 +102,10 @@ https://pan.baidu.com/xxx
 | Telegram/其他 | 单条消息 | 自动降级为单条文本消息，避免刷屏 |
 
 > 💡 插件会自动检测平台类型并选择最合适的消息格式
+
+## 📝 更新日志
+
+查看完整更新日志请访问 [CHANGELOG.md](CHANGELOG.md)
 
 ## 📄 许可
 
